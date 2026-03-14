@@ -5,8 +5,14 @@ import (
 	"net/http"
 )
 
-func writeJSON(w http.ResponseWriter, status int, payload any) {
+func WriteJSON(w http.ResponseWriter, status int, payload any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(payload)
+}
+
+func WriteMethodNotAllowed(w http.ResponseWriter) {
+	WriteJSON(w, http.StatusMethodNotAllowed, map[string]any{
+		"error": "method not allowed",
+	})
 }
