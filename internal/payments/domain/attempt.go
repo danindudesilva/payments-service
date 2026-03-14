@@ -37,10 +37,13 @@ func NewPaymentAttempt(
 	}
 
 	return &PaymentAttempt{
-		ID:         id,
-		OrderID:    orderID,
-		Status:     PaymentStatusPending,
-		Money:      money,
+		ID:      id,
+		OrderID: orderID,
+		Status:  PaymentStatusPending,
+		Money: Money{
+			Amount:   money.Amount,
+			Currency: strings.ToUpper(strings.TrimSpace(money.Currency)),
+		},
 		NextAction: NoNextAction(),
 		Timestamps: PaymentAttemptTimestamps{
 			CreatedAt: now.UTC(),
