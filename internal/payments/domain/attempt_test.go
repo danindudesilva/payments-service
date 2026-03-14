@@ -157,3 +157,40 @@ func mustNewAttempt(t *testing.T, now time.Time) *PaymentAttempt {
 
 	return attempt
 }
+
+func TestLinkProvider_IdempotentWhenSameValues(t *testing.T) {
+	t.Parallel()
+
+	now := time.Date(2026, 3, 14, 12, 0, 0, 0, time.UTC)
+	attempt := mustNewAttempt(t, now)
+
+	err := attempt.LinkProvider("stripe", "pi_123", "secret_123", now.Add(time.Minute))
+	require.NoError(t, err)
+
+	updatedAt := attempt.Timestamps.UpdatedAt
+
+	err = attempt.LinkProvider("stripe", "pi_123", "secret_123", now.Add(2*time.Minute))
+	require.NoError(t, err)
+
+	assert.Equal(t, "stripe", attempt.Provider.ProviderName)
+	assert.Equal(t, "pi_123", attempt.Provider.ProviderPaymentID)
+	assert.Equal(t, "secret_123", attempt.Provider.ClientSecret)
+	assert.Equal(t, updatedAt, attempt.Timestamps.UpdatedAt)
+}
+
+func TestLinkProvider_RejectsOverwrite(t *testing.T) {
+	t.Parallel()
+
+	now := time.Date(2026, 3, 14, 12, 0, 0, 0, time.UTC)
+	attempt := mustNewAttempt(t, now)
+
+	err := attempt.LinkProvider("stripe", "pi_123", "secret_123", now.Add(time.Minute))
+	require.NoError(t, err)
+
+	err = attempt.LinkProvider("stripe", "pi_999", "secret_999", now.Add(2*time.Minute))
+	require.ErrorIs(t, err, ErrProviderAlreadyLinked)
+
+	assert.Equal(t, "stripe", attempt.Provider.ProviderName)
+	assert.Equal(t, "pi_123", attempt.Provider.ProviderPaymentID)
+	assert.Equal(t, "secret_123", attempt.Provider.ClientSecret)
+}
