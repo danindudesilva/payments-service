@@ -21,7 +21,7 @@ func TestNewPaymentAttempt(t *testing.T) {
 
 	assert.Equal(t, attempt.Status, PaymentStatusPending)
 	assert.Equal(t, attempt.Money.Amount, int64(2500))
-	assert.Nil(t,attempt.Timestamps.CompletedAt )
+	assert.Nil(t, attempt.Timestamps.CompletedAt)
 }
 
 func TestNewPaymentAttempt_InvalidMoney(t *testing.T) {
@@ -43,11 +43,10 @@ func TestLinkProvider(t *testing.T) {
 		Money{Amount: 2500, Currency: "GBP"},
 		now,
 	)
-	require.NoError(t,err)
-
+	require.NoError(t, err)
 
 	err = attempt.LinkProvider("stripe", "pi_123", "secret_123", now.Add(time.Minute))
-	require.NoError(t,err)
+	require.NoError(t, err)
 
 	assert.Equal(t, attempt.Provider.ProviderName, "stripe")
 	assert.Equal(t, attempt.Provider.ProviderPaymentID, "pi_123")
@@ -62,7 +61,7 @@ func TestMarkRequiresAction(t *testing.T) {
 		Type:        NextActionTypeRedirect,
 		RedirectURL: "https://example.com/3ds",
 	}, now.Add(time.Minute))
-	require.NoError(t,err)
+	require.NoError(t, err)
 
 	assert.Equal(t, attempt.Status, PaymentStatusRequiresAction)
 	assert.Equal(t, attempt.NextAction.Type, NextActionTypeRedirect)
@@ -83,13 +82,12 @@ func TestMarkProcessing_FromRequiresAction(t *testing.T) {
 	err := attempt.MarkRequiresAction(NextAction{
 		Type:        NextActionTypeRedirect,
 		RedirectURL: "https://example.com/3ds",
-	}, now.Add(time.Minute));
-	require.NoError(t,err)
-	
-
-	err = attempt.MarkProcessing(now.Add(2 * time.Minute));
+	}, now.Add(time.Minute))
 	require.NoError(t, err)
-	
+
+	err = attempt.MarkProcessing(now.Add(2 * time.Minute))
+	require.NoError(t, err)
+
 	assert.Equal(t, attempt.Status, PaymentStatusProcessing)
 	assert.Equal(t, attempt.NextAction.Type, NextActionTypeNone)
 }
@@ -99,12 +97,12 @@ func TestMarkSucceeded_FromProcessing(t *testing.T) {
 
 	attempt := mustNewAttempt(t, now)
 
-	err := attempt.MarkProcessing(now.Add(time.Minute));
+	err := attempt.MarkProcessing(now.Add(time.Minute))
 	require.NoError(t, err)
 
-	err = attempt.MarkSucceeded(now.Add(2 * time.Minute));
+	err = attempt.MarkSucceeded(now.Add(2 * time.Minute))
 	require.NoError(t, err)
-	
+
 	assert.Equal(t, attempt.Status, PaymentStatusSucceeded)
 	assert.NotNil(t, attempt.Timestamps.CompletedAt)
 }
@@ -117,11 +115,10 @@ func TestMarkFailed_FromRequiresAction(t *testing.T) {
 	err := attempt.MarkRequiresAction(NextAction{
 		Type:        NextActionTypeRedirect,
 		RedirectURL: "https://example.com/3ds",
-	}, now.Add(time.Minute));
+	}, now.Add(time.Minute))
 	require.NoError(t, err)
-	
 
-	err = attempt.MarkFailed("3ds authentication failed", now.Add(2*time.Minute));
+	err = attempt.MarkFailed("3ds authentication failed", now.Add(2*time.Minute))
 	require.NoError(t, err)
 
 	assert.Equal(t, attempt.Status, PaymentStatusFailed)
@@ -133,7 +130,7 @@ func TestTerminalStateCannotTransition(t *testing.T) {
 
 	attempt := mustNewAttempt(t, now)
 
-	err := attempt.MarkSucceeded(now.Add(time.Minute));
+	err := attempt.MarkSucceeded(now.Add(time.Minute))
 	require.NoError(t, err)
 
 	err = attempt.MarkProcessing(now.Add(2 * time.Minute))
@@ -144,7 +141,7 @@ func TestProviderPaymentID_WhenNotLinked(t *testing.T) {
 	attempt := mustNewAttempt(t, time.Now())
 
 	_, err := attempt.ProviderPaymentID()
-	assert.ErrorIs(t, err,  ErrProviderNotLinked)
+	assert.ErrorIs(t, err, ErrProviderNotLinked)
 }
 
 func mustNewAttempt(t *testing.T, now time.Time) *PaymentAttempt {
