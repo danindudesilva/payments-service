@@ -151,21 +151,21 @@ func (p *PaymentAttempt) transitionTo(next PaymentStatus) error {
 	case PaymentStatusPending:
 		switch next {
 		case PaymentStatusRequiresAction, PaymentStatusProcessing, PaymentStatusSucceeded, PaymentStatusFailed, PaymentStatusCancelled:
+			p.Status = next
 			return nil
 		}
-
 	case PaymentStatusRequiresAction:
 		switch next {
 		case PaymentStatusProcessing, PaymentStatusSucceeded, PaymentStatusFailed, PaymentStatusCancelled:
+			p.Status = next
 			return nil
 		}
-
 	case PaymentStatusProcessing:
 		switch next {
 		case PaymentStatusSucceeded, PaymentStatusFailed, PaymentStatusCancelled:
+			p.Status = next
 			return nil
 		}
-
 	case PaymentStatusSucceeded, PaymentStatusFailed, PaymentStatusCancelled:
 		return ErrInvalidTransition
 	}
@@ -174,7 +174,6 @@ func (p *PaymentAttempt) transitionTo(next PaymentStatus) error {
 }
 
 func (p *PaymentAttempt) touch(now time.Time) {
-	p.Status = p.Status
 	p.Timestamps.UpdatedAt = now.UTC()
 }
 
