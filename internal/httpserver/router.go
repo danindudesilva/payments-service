@@ -3,7 +3,6 @@ package httpserver
 import (
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/danindudesilva/payments-service/internal/config"
 )
@@ -27,7 +26,7 @@ func NewRouter(cfg config.Config, logger *slog.Logger) http.Handler {
 		}),
 
 		requestID(),
-		timeout(30*time.Second),
+		timeout(),
 		recoverPanic(logger),
 		requestLogger(logger),
 	))
