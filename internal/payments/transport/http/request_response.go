@@ -11,17 +11,17 @@ type createPaymentAttemptRequest struct {
 }
 
 type paymentAttemptResponse struct {
-	ID            string                `json:"id"`
-	OrderID       string                `json:"order_id"`
-	Status        string                `json:"status"`
-	Amount        int64                 `json:"amount"`
-	Currency      string                `json:"currency"`
-	FailureReason string                `json:"failure_reason,omitempty"`
-	NextAction    nextActionResponse    `json:"next_action"`
-	Provider      providerResponse      `json:"provider"`
-	CreatedAt     string                `json:"created_at"`
-	UpdatedAt     string                `json:"updated_at"`
-	CompletedAt   *string               `json:"completed_at,omitempty"`
+	ID            string             `json:"id"`
+	OrderID       string             `json:"order_id"`
+	Status        string             `json:"status"`
+	Amount        int64              `json:"amount"`
+	Currency      string             `json:"currency"`
+	FailureReason string             `json:"failure_reason,omitempty"`
+	NextAction    nextActionResponse `json:"next_action"`
+	Provider      providerResponse   `json:"provider"`
+	CreatedAt     string             `json:"created_at"`
+	UpdatedAt     string             `json:"updated_at"`
+	CompletedAt   *string            `json:"completed_at,omitempty"`
 }
 
 type nextActionResponse struct {
@@ -30,9 +30,9 @@ type nextActionResponse struct {
 }
 
 type providerResponse struct {
-	Name            string `json:"name,omitempty"`
-	PaymentID       string `json:"payment_id,omitempty"`
-	ClientSecret    string `json:"client_secret,omitempty"`
+	Name         string `json:"name,omitempty"`
+	PaymentID    string `json:"payment_id,omitempty"`
+	ClientSecret string `json:"client_secret,omitempty"`
 }
 
 func toPaymentAttemptResponse(attempt *domain.PaymentAttempt) paymentAttemptResponse {
