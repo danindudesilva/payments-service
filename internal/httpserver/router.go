@@ -10,26 +10,23 @@ import (
 func NewRouter(cfg config.Config, logger *slog.Logger) http.Handler {
 	mux := http.NewServeMux()
 
-	mux.Handle("/healthz", chain(
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Method != http.MethodGet {
-				writeJSON(w, http.StatusMethodNotAllowed, map[string]any{
-					"error": "method not allowed",
-				})
-				return
-			}
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			WriteMethodNotAllowed(w)
+			return
+		}
 
-			writeJSON(w, http.StatusOK, map[string]any{
-				"status": "ok",
-				"env":    cfg.AppEnv,
-			})
-		}),
+		WriteJSON(w, http.StatusOK, map[string]any{
+			"status": "ok",
+			"env":    cfg.AppEnv,
+		})
+	})
 
+	return chain(
+		mux,
 		requestID(),
 		timeout(),
 		recoverPanic(logger),
 		requestLogger(logger),
-	))
-
-	return mux
+	)
 }

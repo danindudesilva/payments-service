@@ -65,7 +65,7 @@ func recoverPanic(logger *slog.Logger) middleware {
 						slog.String("request_id", RequestIDFromContext(r.Context())),
 					)
 
-					writeJSON(w, http.StatusInternalServerError, map[string]any{
+					WriteJSON(w, http.StatusInternalServerError, map[string]any{
 						"error": "internal server error",
 					})
 				}
