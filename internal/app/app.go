@@ -23,14 +23,14 @@ type App struct {
 	logger *slog.Logger
 }
 
-func New(cfg config.Config) *App {
+func New(cfg config.Config) (*App, error) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	repo := memoryrepo.NewRepository()
 
 	paymentGateway, err := gateway.New(cfg)
 	if err != nil {
-		panic(fmt.Sprintf("create payment gateway: %v", err))
+		return nil, fmt.Errorf("create payment gateway: %w", err)
 	}
 
 	service := paymentservice.New(
@@ -59,7 +59,7 @@ func New(cfg config.Config) *App {
 		cfg:    cfg,
 		server: server,
 		logger: logger,
-	}
+	}, nil
 }
 
 func (a *App) Run(ctx context.Context) error {

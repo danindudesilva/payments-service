@@ -15,7 +15,10 @@ func main() {
 	defer stop()
 
 	cfg := config.MustLoad()
-	application := app.New(cfg)
+	application, err := app.New(cfg)
+	if err != nil {
+		log.Fatalf("failed to create application: %v", err)
+	}
 
 	if err := application.Run(ctx); err != nil {
 		log.Fatalf("application exited with error: %v", err)
