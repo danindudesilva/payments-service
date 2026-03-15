@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestHTTPAddress(t *testing.T) {
@@ -15,7 +16,7 @@ func TestHTTPAddress(t *testing.T) {
 	assert.Equal(t, ":9999", cfg.HTTPAddress())
 }
 
-func TestMustLoadDefaults(t *testing.T) {
+func TestLoadDefaults(t *testing.T) {
 	t.Parallel()
 
 	unsetEnv(t, "APP_ENV")
@@ -23,7 +24,8 @@ func TestMustLoadDefaults(t *testing.T) {
 	unsetEnv(t, "PAYMENTS_PROVIDER")
 	unsetEnv(t, "STRIPE_SECRET_KEY")
 
-	cfg := MustLoad()
+	cfg, err := Load()
+	require.NoError(t, err)
 
 	assert.Equal(t, "development", cfg.AppEnv)
 	assert.Equal(t, "8080", cfg.HTTPPort)
