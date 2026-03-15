@@ -37,8 +37,8 @@ func (g *Gateway) CreatePayment(ctx context.Context, request domain.CreateProvid
 	}
 
 	params.Metadata = map[string]string{
-		"attempt_id": request.AttemptID,
-		"order_id":   request.OrderID,
+		MetadataKeyAttemptID: request.AttemptID,
+		MetadataKeyOrderID:   request.OrderID,
 	}
 
 	intent, err := paymentintent.New(params)
