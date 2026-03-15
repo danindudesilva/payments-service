@@ -96,6 +96,13 @@ func (h *Handler) createPaymentAttempt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := validateReturnURL(request.ReturnURL); err != nil {
+		basehttp.WriteJSON(w, http.StatusBadRequest, basehttp.ErrorResponse{
+			Error: err.Error(),
+		})
+		return
+	}
+
 	result, err := h.service.CreatePaymentAttempt(r.Context(), service.CreatePaymentAttemptInput{
 		OrderID:     request.OrderID,
 		Amount:      request.Amount,
