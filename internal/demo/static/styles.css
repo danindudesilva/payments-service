@@ -47,3 +47,24 @@ pre {
 .hidden {
   display: none;
 }
+
+.state-grid {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 8px 12px;
+  margin: 0;
+}
+
+.state-grid dt {
+  font-weight: bold;
+}
+
+.state-grid dd {
+  margin: 0;
+  word-break: break-word;
+}
+
+.button-stack {
+  display: grid;
+  gap: 10px;
+}

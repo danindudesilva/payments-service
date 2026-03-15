@@ -18,7 +18,35 @@
       </p>
     </section>
 
+    <section class="panel">
+      <h2>Current demo state</h2>
+      <dl class="state-grid">
+        <dt>Attempt ID</dt>
+        <dd id="state-attempt-id">-</dd>
+
+        <dt>Provider payment ID</dt>
+        <dd id="state-provider-payment-id">-</dd>
+
+        <dt>Backend status</dt>
+        <dd id="state-status">-</dd>
+
+        <dt>Failure reason</dt>
+        <dd id="state-failure-reason">-</dd>
+
+        <dt>Client secret</dt>
+        <dd id="state-client-secret">not loaded</dd>
+
+        <dt>Return URL</dt>
+        <dd id="state-return-url">-</dd>
+
+        <dt>Returned from Stripe</dt>
+        <dd id="state-returned">no</dd>
+      </dl>
+    </section>
+
     <form id="create-form" class="panel">
+      <h2>Create payment attempt</h2>
+
       <label for="order-id">Order ID</label>
       <input id="order-id" value="order_demo_123">
 
@@ -32,16 +60,22 @@
     </form>
 
     <section id="payment-panel" class="panel hidden">
+      <h2>Confirm payment</h2>
       <div id="payment-element"></div>
       <button id="confirm-button" type="button">Confirm payment</button>
     </section>
 
     <section class="panel">
-      <button id="reconcile-button" type="button">Reconcile latest backend state</button>
+      <h2>Debug actions</h2>
+      <div class="button-stack">
+        <button id="fetch-button" type="button">Fetch attempt from backend</button>
+        <button id="reconcile-button" type="button">Reconcile latest backend state</button>
+        <button id="reset-button" type="button">Reset demo state</button>
+      </div>
     </section>
 
     <section class="panel">
-      <h2>Output</h2>
+      <h2>Last backend payload</h2>
       <pre id="output"></pre>
     </section>
   </main>
