@@ -152,6 +152,44 @@ func TestPaymentAttemptByID_MissingID(t *testing.T) {
 	assert.Contains(t, res.Body.String(), "payment attempt id is required")
 }
 
+func TestCreatePaymentAttempt_UnknownErrorReturnsSafeMessage(t *testing.T) {
+	t.Parallel()
+
+	service := paymentservice.New(
+		memoryrepo.NewRepository(),
+		&fakeGateway{
+			createPaymentFunc: func(ctx context.Context, request domain.CreateProviderPaymentRequest) (domain.CreateProviderPaymentResult, error) {
+				return domain.CreateProviderPaymentResult{}, assert.AnError
+			},
+			getPaymentFunc: func(ctx context.Context, providerPaymentID string) (domain.CreateProviderPaymentResult, error) {
+				return domain.CreateProviderPaymentResult{}, nil
+			},
+		},
+		func() time.Time { return time.Date(2026, 3, 14, 12, 0, 0, 0, time.UTC) },
+		func() string { return "attempt_123" },
+	)
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	handler := NewHandler(service, logger)
+
+	req := httptest.NewRequest(http.MethodPost, "/payment-attempts", bytes.NewBufferString(`{
+		"order_id":"order_123",
+		"amount":2500,
+		"currency":"gbp",
+		"return_url":"https://example.com/return",
+		"description":"test payment"
+	}`))
+	req.Header.Set("Content-Type", "application/json")
+
+	res := httptest.NewRecorder()
+
+	handler.handlePaymentAttempts(res, req)
+
+	require.Equal(t, http.StatusInternalServerError, res.Code)
+	assert.Contains(t, res.Body.String(), `"error":"internal server error"`)
+	assert.NotContains(t, res.Body.String(), assert.AnError.Error())
+}
+
 func newTestHandler(t *testing.T) *Handler {
 	t.Helper()
 
