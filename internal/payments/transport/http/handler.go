@@ -2,13 +2,11 @@ package http
 
 import (
 	"encoding/json"
-	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
 
 	basehttp "github.com/danindudesilva/payments-service/internal/httpserver"
-	"github.com/danindudesilva/payments-service/internal/payments/domain"
 	"github.com/danindudesilva/payments-service/internal/payments/service"
 )
 
@@ -51,8 +49,8 @@ func (h *Handler) createPaymentAttempt(w http.ResponseWriter, r *http.Request) {
 	var request createPaymentAttemptRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		basehttp.WriteJSON(w, http.StatusBadRequest, map[string]any{
-			"error": "invalid json body",
+		basehttp.WriteJSON(w, http.StatusBadRequest, basehttp.ErrorResponse{
+			Error: "invalid json body",
 		})
 		return
 	}
@@ -70,9 +68,7 @@ func (h *Handler) createPaymentAttempt(w http.ResponseWriter, r *http.Request) {
 			slog.String("error", err.Error()),
 		)
 
-		basehttp.WriteJSON(w, http.StatusBadRequest, map[string]any{
-			"error": err.Error(),
-		})
+		basehttp.WriteError(w, err)
 		return
 	}
 
@@ -82,8 +78,8 @@ func (h *Handler) createPaymentAttempt(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) getPaymentAttempt(w http.ResponseWriter, r *http.Request) {
 	attemptID := strings.TrimPrefix(r.URL.Path, "/payment-attempts/")
 	if strings.TrimSpace(attemptID) == "" {
-		basehttp.WriteJSON(w, http.StatusBadRequest, map[string]any{
-			"error": "payment attempt id is required",
+		basehttp.WriteJSON(w, http.StatusBadRequest, basehttp.ErrorResponse{
+			Error: "payment attempt id is required",
 		})
 		return
 	}
@@ -96,14 +92,7 @@ func (h *Handler) getPaymentAttempt(w http.ResponseWriter, r *http.Request) {
 			slog.String("error", err.Error()),
 		)
 
-		status := http.StatusInternalServerError
-		if errors.Is(err, domain.ErrPaymentNotFound) {
-			status = http.StatusNotFound
-		}
-
-		basehttp.WriteJSON(w, status, map[string]any{
-			"error": err.Error(),
-		})
+		basehttp.WriteError(w, err)
 		return
 	}
 
