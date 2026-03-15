@@ -291,6 +291,135 @@ func TestCreatePaymentAttempt_InvalidReturnURL(t *testing.T) {
 	assert.Contains(t, res.Body.String(), "return_url")
 }
 
+func TestHandlePaymentAttemptRoutes_GetByID(t *testing.T) {
+	t.Parallel()
+
+	handler, repo := newTestHandlerWithRepo(t)
+
+	now := time.Date(2026, 3, 14, 12, 0, 0, 0, time.UTC)
+	attempt, err := domain.NewPaymentAttempt(
+		"attempt_existing",
+		"order_existing",
+		domain.Money{Amount: 4200, Currency: "GBP"},
+		now,
+	)
+	require.NoError(t, err)
+
+	err = repo.Save(context.Background(), attempt)
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodGet, "/payment-attempts/attempt_existing", nil)
+	res := httptest.NewRecorder()
+
+	handler.handlePaymentAttemptRoutes(res, req)
+
+	require.Equal(t, http.StatusOK, res.Code)
+	assert.Contains(t, res.Body.String(), `"id":"attempt_existing"`)
+	assert.Contains(t, res.Body.String(), `"order_id":"order_existing"`)
+}
+
+func TestHandlePaymentAttemptRoutes_Reconcile(t *testing.T) {
+	t.Parallel()
+
+	now := time.Date(2026, 3, 14, 12, 0, 0, 0, time.UTC)
+	repo := memoryrepo.NewRepository()
+
+	attempt, err := domain.NewPaymentAttempt(
+		"attempt_existing",
+		"order_existing",
+		domain.Money{Amount: 4200, Currency: "GBP"},
+		now,
+	)
+	require.NoError(t, err)
+
+	err = attempt.LinkProvider("stripe", "pi_123", "secret_123", now)
+	require.NoError(t, err)
+
+	err = repo.Save(context.Background(), attempt)
+	require.NoError(t, err)
+
+	service := paymentservice.New(
+		repo,
+		&fakeGateway{
+			createPaymentFunc: func(ctx context.Context, request domain.CreateProviderPaymentRequest) (domain.CreateProviderPaymentResult, error) {
+				return domain.CreateProviderPaymentResult{}, nil
+			},
+			getPaymentFunc: func(ctx context.Context, providerPaymentID string) (domain.CreateProviderPaymentResult, error) {
+				return domain.CreateProviderPaymentResult{
+					ProviderName:      "stripe",
+					ProviderPaymentID: providerPaymentID,
+					ClientSecret:      "secret_123",
+					Status:            domain.PaymentStatusSucceeded,
+				}, nil
+			},
+		},
+		func() time.Time { return now.Add(time.Minute) },
+		func() string { return "unused" },
+	)
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	handler := NewHandler(service, logger)
+
+	req := httptest.NewRequest(http.MethodPost, "/payment-attempts/attempt_existing/reconcile", nil)
+	res := httptest.NewRecorder()
+
+	handler.handlePaymentAttemptRoutes(res, req)
+
+	require.Equal(t, http.StatusOK, res.Code)
+	assert.Contains(t, res.Body.String(), `"id":"attempt_existing"`)
+	assert.Contains(t, res.Body.String(), `"status":"succeeded"`)
+}
+
+func TestHandlePaymentAttemptRoutes_GetOnReconcileMethodNotAllowed(t *testing.T) {
+	t.Parallel()
+
+	handler := newTestHandler(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/payment-attempts/attempt_123/reconcile", nil)
+	res := httptest.NewRecorder()
+
+	handler.handlePaymentAttemptRoutes(res, req)
+
+	require.Equal(t, http.StatusMethodNotAllowed, res.Code)
+	assert.Contains(t, res.Body.String(), "method not allowed")
+}
+
+func TestHandlePaymentAttemptRoutes_PostOnAttemptIDMethodNotAllowed(t *testing.T) {
+	t.Parallel()
+
+	handler := newTestHandler(t)
+
+	req := httptest.NewRequest(http.MethodPost, "/payment-attempts/attempt_123", nil)
+	res := httptest.NewRecorder()
+
+	handler.handlePaymentAttemptRoutes(res, req)
+
+	require.Equal(t, http.StatusMethodNotAllowed, res.Code)
+	assert.Contains(t, res.Body.String(), "method not allowed")
+}
+
+func TestCreatePaymentAttempt_MissingReturnURL(t *testing.T) {
+	t.Parallel()
+
+	handler := newTestHandler(t)
+
+	req := httptest.NewRequest(http.MethodPost, "/payment-attempts", bytes.NewBufferString(`{
+		"order_id":"order_123",
+		"amount":2500,
+		"currency":"gbp",
+		"return_url":"",
+		"description":"test payment"
+	}`))
+	req.Header.Set("Content-Type", "application/json")
+
+	res := httptest.NewRecorder()
+
+	handler.handlePaymentAttempts(res, req)
+
+	require.Equal(t, http.StatusBadRequest, res.Code)
+	assert.Contains(t, res.Body.String(), "return_url is required")
+}
+
 func newTestHandler(t *testing.T) *Handler {
 	t.Helper()
 
