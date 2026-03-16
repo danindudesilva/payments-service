@@ -19,15 +19,58 @@ import (
 
 const testWebhookSecret = "whsec_test_secret"
 
-func newWebhookTestHandler() *WebhookHandler {
+func newWebhookTestHandler(repo domain.PaymentAttemptRepository, t time.Time) *WebhookHandler {
+	svc := paymentservice.New(
+		repo,
+		&fakeGateway{
+			createPaymentFunc: func(
+				ctx context.Context,
+				request domain.CreateProviderPaymentRequest,
+			) (
+				domain.CreateProviderPaymentResult,
+				error,
+			) {
+				return domain.CreateProviderPaymentResult{}, nil
+			},
+			getPaymentFunc: func(
+				ctx context.Context,
+				providerPaymentID string,
+			) (
+				domain.CreateProviderPaymentResult,
+				error,
+			) {
+				return domain.CreateProviderPaymentResult{}, nil
+			},
+		},
+		func() time.Time { return t },
+		func() string { return "unused" },
+	)
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	return NewWebhookHandler(logger, testWebhookSecret, svc)
+}
+
+func newWebhookTestHandlerWithDefaults() *WebhookHandler {
 	repo := memoryrepo.NewRepository()
 	svc := paymentservice.New(
 		repo,
 		&fakeGateway{
-			createPaymentFunc: func(ctx context.Context, request domain.CreateProviderPaymentRequest) (domain.CreateProviderPaymentResult, error) {
+			createPaymentFunc: func(
+				ctx context.Context,
+				request domain.CreateProviderPaymentRequest,
+			) (
+				domain.CreateProviderPaymentResult,
+				error,
+			) {
 				return domain.CreateProviderPaymentResult{}, nil
 			},
-			getPaymentFunc: func(ctx context.Context, providerPaymentID string) (domain.CreateProviderPaymentResult, error) {
+			getPaymentFunc: func(
+				ctx context.Context,
+				providerPaymentID string,
+			) (
+				domain.CreateProviderPaymentResult,
+				error,
+			) {
 				return domain.CreateProviderPaymentResult{}, nil
 			},
 		},

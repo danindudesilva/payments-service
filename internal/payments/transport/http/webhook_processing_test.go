@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,7 +11,6 @@ import (
 
 	"github.com/danindudesilva/payments-service/internal/payments/domain"
 	memoryrepo "github.com/danindudesilva/payments-service/internal/payments/repository/memory"
-	paymentservice "github.com/danindudesilva/payments-service/internal/payments/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	stripe "github.com/stripe/stripe-go/v84"
@@ -22,8 +19,6 @@ import (
 
 func TestStripeWebhook_PaymentIntentSucceededUpdatesAttempt(t *testing.T) {
 	t.Parallel()
-
-	const secret = "whsec_test_secret"
 
 	now := time.Date(2026, 3, 16, 12, 0, 0, 0, time.UTC)
 	repo := memoryrepo.NewRepository()
@@ -44,23 +39,7 @@ func TestStripeWebhook_PaymentIntentSucceededUpdatesAttempt(t *testing.T) {
 	err = repo.Save(context.Background(), attempt)
 	require.NoError(t, err)
 
-	svc := paymentservice.New(
-		repo,
-		&fakeGateway{
-			createPaymentFunc: func(ctx context.Context, request domain.CreateProviderPaymentRequest) (domain.CreateProviderPaymentResult, error) {
-				return domain.CreateProviderPaymentResult{}, nil
-			},
-			getPaymentFunc: func(ctx context.Context, providerPaymentID string) (domain.CreateProviderPaymentResult, error) {
-				return domain.CreateProviderPaymentResult{}, nil
-			},
-		},
-		func() time.Time { return now.Add(time.Minute) },
-		func() string { return "unused" },
-	)
-
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	handler := NewWebhookHandler(logger, secret, svc)
-
+	handler := newWebhookTestHandler(repo, now.Add(time.Minute))
 	payload := fmt.Sprintf(`{
 		"id":"evt_test",
 		"object":"event",
@@ -76,7 +55,7 @@ func TestStripeWebhook_PaymentIntentSucceededUpdatesAttempt(t *testing.T) {
 
 	signature := webhook.GenerateTestSignedPayload(&webhook.UnsignedPayload{
 		Payload: []byte(payload),
-		Secret:  secret,
+		Secret:  testWebhookSecret,
 	})
 
 	req := httptest.NewRequest(http.MethodPost, "/webhooks/stripe", bytes.NewBufferString(payload))
@@ -96,8 +75,6 @@ func TestStripeWebhook_PaymentIntentSucceededUpdatesAttempt(t *testing.T) {
 func TestStripeWebhook_PaymentIntentFailedUpdatesAttempt(t *testing.T) {
 	t.Parallel()
 
-	const secret = "whsec_test_secret"
-
 	now := time.Date(2026, 3, 16, 12, 0, 0, 0, time.UTC)
 	repo := memoryrepo.NewRepository()
 
@@ -117,23 +94,7 @@ func TestStripeWebhook_PaymentIntentFailedUpdatesAttempt(t *testing.T) {
 	err = repo.Save(context.Background(), attempt)
 	require.NoError(t, err)
 
-	svc := paymentservice.New(
-		repo,
-		&fakeGateway{
-			createPaymentFunc: func(ctx context.Context, request domain.CreateProviderPaymentRequest) (domain.CreateProviderPaymentResult, error) {
-				return domain.CreateProviderPaymentResult{}, nil
-			},
-			getPaymentFunc: func(ctx context.Context, providerPaymentID string) (domain.CreateProviderPaymentResult, error) {
-				return domain.CreateProviderPaymentResult{}, nil
-			},
-		},
-		func() time.Time { return now.Add(time.Minute) },
-		func() string { return "unused" },
-	)
-
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	handler := NewWebhookHandler(logger, secret, svc)
-
+	handler := newWebhookTestHandler(repo, now.Add(time.Minute))
 	payload := fmt.Sprintf(`{
 		"id":"evt_test",
 		"object":"event",
@@ -149,7 +110,7 @@ func TestStripeWebhook_PaymentIntentFailedUpdatesAttempt(t *testing.T) {
 
 	signature := webhook.GenerateTestSignedPayload(&webhook.UnsignedPayload{
 		Payload: []byte(payload),
-		Secret:  secret,
+		Secret:  testWebhookSecret,
 	})
 
 	req := httptest.NewRequest(http.MethodPost, "/webhooks/stripe", bytes.NewBufferString(payload))
@@ -169,7 +130,7 @@ func TestStripeWebhook_PaymentIntentFailedUpdatesAttempt(t *testing.T) {
 func TestStripeWebhook_UnhandledEventTypeIsIgnored(t *testing.T) {
 	t.Parallel()
 
-	handler := newWebhookTestHandler()
+	handler := newWebhookTestHandlerWithDefaults()
 
 	payload := fmt.Sprintf(`{
 		"id":"evt_test",
@@ -197,7 +158,7 @@ func TestStripeWebhook_UnhandledEventTypeIsIgnored(t *testing.T) {
 func TestStripeWebhook_InvalidSignedPayloadReturnsBadRequest(t *testing.T) {
 	t.Parallel()
 
-	handler := newWebhookTestHandler()
+	handler := newWebhookTestHandlerWithDefaults()
 
 	payload := fmt.Sprintf(`{
 		"id":"evt_test",
@@ -225,7 +186,7 @@ func TestStripeWebhook_InvalidSignedPayloadReturnsBadRequest(t *testing.T) {
 func TestStripeWebhook_ValidSignedHandledEventWithMissingAttemptReturnsServerError(t *testing.T) {
 	t.Parallel()
 
-	handler := newWebhookTestHandler()
+	handler := newWebhookTestHandlerWithDefaults()
 
 	req := newSignedWebhookRequest("payment_intent.succeeded", `{"id":"pi_missing","object":"payment_intent"}`)
 	res := httptest.NewRecorder()

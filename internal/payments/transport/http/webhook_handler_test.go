@@ -14,7 +14,7 @@ import (
 func TestStripeWebhook_MethodNotAllowed(t *testing.T) {
 	t.Parallel()
 
-	handler := newWebhookTestHandler()
+	handler := newWebhookTestHandlerWithDefaults()
 
 	req := httptest.NewRequest(http.MethodGet, "/webhooks/stripe", nil)
 	res := httptest.NewRecorder()
@@ -28,7 +28,7 @@ func TestStripeWebhook_MethodNotAllowed(t *testing.T) {
 func TestStripeWebhook_InvalidSignature(t *testing.T) {
 	t.Parallel()
 
-	handler := newWebhookTestHandler()
+	handler := newWebhookTestHandlerWithDefaults()
 
 	payload := `{"id":"evt_test","object":"event","type":"payment_intent.succeeded"}`
 	req := httptest.NewRequest(http.MethodPost, "/webhooks/stripe", strings.NewReader(payload))
@@ -45,7 +45,7 @@ func TestStripeWebhook_InvalidSignature(t *testing.T) {
 func TestStripeWebhook_ValidSignature(t *testing.T) {
 	t.Parallel()
 
-	handler := newWebhookTestHandler()
+	handler := newWebhookTestHandlerWithDefaults()
 
 	req := newSignedWebhookRequest("charge.refunded", `{"id":"ch_123","object":"charge"}`)
 	res := httptest.NewRecorder()
@@ -61,7 +61,7 @@ func TestStripeWebhook_ValidSignature(t *testing.T) {
 func TestStripeWebhook_InvalidBodyReadStillHandled(t *testing.T) {
 	t.Parallel()
 
-	handler := newWebhookTestHandler()
+	handler := newWebhookTestHandlerWithDefaults()
 
 	req := httptest.NewRequest(http.MethodPost, "/webhooks/stripe", strings.NewReader("ignored"))
 	req.Body = io.NopCloser(failingReader{})
