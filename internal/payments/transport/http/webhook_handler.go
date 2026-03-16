@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	basehttp "github.com/danindudesilva/payments-service/internal/httpserver"
-	"github.com/stripe/stripe-go/v82/webhook"
+	"github.com/stripe/stripe-go/v84/webhook"
 )
 
 type WebhookHandler struct {

@@ -42,6 +42,7 @@ Environment variables:
 - `PAYMENTS_PROVIDER` - payment gateway provider, defaults to `fake`
 - `STRIPE_SECRET_KEY` - Stripe secret key, used when `PAYMENTS_PROVIDER=stripe`
 - `STRIPE_PUBLISHABLE_KEY` - Stripe publishable key, used when `PAYMENTS_PROVIDER=stripe`
+- `STRIPE_WEBHOOK_SECRET` - Stripe webhook signing secret, required when `PAYMENTS_PROVIDER=stripe`
 - `DATABASE_URL` - PostgreSQL connection string, required
 
 ## Available endpoints
