@@ -22,6 +22,8 @@ const testWebhookSecret = "whsec_test_secret"
 type fakeProcessedWebhookEventRepo struct {
 	processed map[string]bool
 	saveCalls int
+	hasErr    error
+	saveErr   error
 }
 
 func newFakeProcessedWebhookEventRepo() *fakeProcessedWebhookEventRepo {
@@ -31,6 +33,10 @@ func newFakeProcessedWebhookEventRepo() *fakeProcessedWebhookEventRepo {
 }
 
 func (r *fakeProcessedWebhookEventRepo) SaveProcessedEvent(ctx context.Context, providerName, eventID, eventType string) error {
+	if r.saveErr != nil {
+		return r.saveErr
+	}
+
 	key := fmt.Sprintf("%s:%s", providerName, eventID)
 	r.processed[key] = true
 	r.saveCalls++
@@ -38,6 +44,10 @@ func (r *fakeProcessedWebhookEventRepo) SaveProcessedEvent(ctx context.Context, 
 }
 
 func (r *fakeProcessedWebhookEventRepo) HasProcessedEvent(ctx context.Context, providerName, eventID string) (bool, error) {
+	if r.hasErr != nil {
+		return false, r.hasErr
+	}
+
 	key := fmt.Sprintf("%s:%s", providerName, eventID)
 	return r.processed[key], nil
 }
