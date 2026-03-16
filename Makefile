@@ -13,3 +13,17 @@ fmt:
 
 build:
 	go build -o bin/$(APP_NAME) ./cmd/api
+
+.PHONY: db-up db-down db-logs db-psql
+
+db-up:
+	docker compose -f deployments/docker-compose.yml up -d
+
+db-down:
+	docker compose -f deployments/docker-compose.yml down
+
+db-logs:
+	docker compose -f deployments/docker-compose.yml logs -f postgres
+
+db-psql:
+	psql "postgres://payments_service:payments_service@localhost:5432/payments_service?sslmode=disable"
