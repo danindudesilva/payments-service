@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/danindudesilva/payments-service/internal/payments/domain"
+	"github.com/danindudesilva/payments-service/internal/platform/database"
 )
 
 type Clock func() time.Time
@@ -111,6 +112,17 @@ func (s *Service) CreatePaymentAttempt(
 	}
 
 	if err := s.repo.Save(ctx, attempt); err != nil {
+		if database.IsUniqueViolation(err) {
+			existing, lookupErr := s.repo.GetByIdempotencyKey(ctx, input.IdempotencyKey)
+			if lookupErr != nil {
+				return nil, fmt.Errorf("save payment attempt after unique conflict: %w", err)
+			}
+
+			return &CreatePaymentAttemptOutput{
+				Attempt: existing,
+			}, nil
+		}
+
 		return nil, fmt.Errorf("save payment attempt: %w", err)
 	}
 
