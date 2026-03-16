@@ -29,6 +29,7 @@ func NewTestPool(t *testing.T) *pgxpool.Pool {
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), `DELETE FROM processed_webhook_events`)
 		_, _ = pool.Exec(context.Background(), `DELETE FROM payment_attempts`)
 		pool.Close()
 	})
