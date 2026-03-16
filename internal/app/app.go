@@ -38,6 +38,7 @@ func New(cfg config.Config) (*App, error) {
 	}
 
 	repo := pg.NewRepository(dbPool)
+	processedEventRepo := pg.NewProcessedWebhookEventRepository(dbPool)
 
 	paymentGateway, err := gateway.New(gateway.Config{
 		PaymentsProvider:     cfg.PaymentsProvider,
@@ -65,7 +66,7 @@ func New(cfg config.Config) (*App, error) {
 	handler := paymenthttp.NewHandler(service, logger)
 	handler.Register(mux)
 
-	webhookHandler := paymenthttp.NewWebhookHandler(logger, cfg.StripeWebhookSecret, service)
+	webhookHandler := paymenthttp.NewWebhookHandler(logger, cfg.StripeWebhookSecret, service, processedEventRepo)
 	webhookHandler.Register(mux)
 
 	demoHandler, err := demo.NewHandler(cfg.StripePublishableKey)
