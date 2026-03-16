@@ -62,3 +62,40 @@ curl -i \
     "description": "test payment"
   }'
 ```
+
+## Local Postgres setup
+
+This project uses PostgreSQL for durable payment attempt storage.
+
+Start Postgres locally:
+
+```bash
+make db-up
+```
+Apply the schema:
+
+```bash
+make db-schema
+```
+
+Open a local psql session:
+
+```bash
+make db-psql
+```
+
+#### Default local connection details:
+```
+host: localhost
+port: 5432
+database: payments_service
+user: payments_service
+password: payments_service
+```
+
+#### Current schema
+
+The initial schema is in:
+```
+db/schema.sql
+```
