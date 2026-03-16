@@ -186,6 +186,21 @@ func TestRepository_GetByProviderPaymentID_PreservesReturnURLAndStatus(t *testin
 	assert.Equal(t, domain.PaymentStatusProcessing, got.Status)
 }
 
+func TestRepository_GetByIdempotencyKey(t *testing.T) {
+	pool := testutil.NewTestPool(t)
+	repo := NewRepository(pool)
+
+	attempt := mustNewAttempt(t)
+	err := repo.Save(context.Background(), attempt)
+	require.NoError(t, err)
+
+	got, err := repo.GetByIdempotencyKey(context.Background(), attempt.IdempotencyKey)
+	require.NoError(t, err)
+
+	assert.Equal(t, attempt.ID, got.ID)
+	assert.Equal(t, attempt.IdempotencyKey, got.IdempotencyKey)
+}
+
 func mustNewAttempt(t *testing.T) *domain.PaymentAttempt {
 	t.Helper()
 
