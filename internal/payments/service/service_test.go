@@ -8,6 +8,8 @@ import (
 
 	"github.com/danindudesilva/payments-service/internal/payments/domain"
 	memoryrepo "github.com/danindudesilva/payments-service/internal/payments/repository/memory"
+	"github.com/danindudesilva/payments-service/internal/payments/repository/postgres"
+	"github.com/danindudesilva/payments-service/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -49,11 +51,12 @@ func TestService_CreatePaymentAttempt_RequiresAction(t *testing.T) {
 	)
 
 	result, err := svc.CreatePaymentAttempt(context.Background(), CreatePaymentAttemptInput{
-		OrderID:     "order_123",
-		Amount:      2500,
-		Currency:    "gbp",
-		ReturnURL:   "https://example.com/return",
-		Description: "Test payment",
+		OrderID:        "order_123",
+		IdempotencyKey: "idempotency-key-123",
+		Amount:         2500,
+		Currency:       "gbp",
+		ReturnURL:      "https://example.com/return",
+		Description:    "Test payment",
 	})
 	require.NoError(t, err)
 
@@ -74,7 +77,8 @@ func TestService_CreatePaymentAttempt_Succeeded(t *testing.T) {
 	t.Parallel()
 
 	now := time.Date(2026, 3, 14, 12, 0, 0, 0, time.UTC)
-	repo := memoryrepo.NewRepository()
+	pool := testutil.NewTestPool(t)
+	repo := postgres.NewRepository(pool)
 
 	gateway := &fakeGateway{
 		createPaymentFunc: func(ctx context.Context, request domain.CreateProviderPaymentRequest) (domain.CreateProviderPaymentResult, error) {
@@ -98,10 +102,11 @@ func TestService_CreatePaymentAttempt_Succeeded(t *testing.T) {
 	)
 
 	result, err := svc.CreatePaymentAttempt(context.Background(), CreatePaymentAttemptInput{
-		OrderID:   "order_456",
-		Amount:    5000,
-		Currency:  "GBP",
-		ReturnURL: "https://example.com/return",
+		OrderID:        "order_456",
+		IdempotencyKey: "idempotency-key-123",
+		Amount:         5000,
+		Currency:       "GBP",
+		ReturnURL:      "https://example.com/return",
 	})
 	require.NoError(t, err)
 
@@ -132,9 +137,10 @@ func TestService_CreatePaymentAttempt_GatewayError(t *testing.T) {
 	)
 
 	result, err := svc.CreatePaymentAttempt(context.Background(), CreatePaymentAttemptInput{
-		OrderID:  "order_789",
-		Amount:   3000,
-		Currency: "GBP",
+		OrderID:        "order_789",
+		IdempotencyKey: "idempotency-key-123",
+		Amount:         3000,
+		Currency:       "GBP",
 	})
 	require.Error(t, err)
 	assert.Nil(t, result)
@@ -210,10 +216,11 @@ func TestService_CreatePaymentAttempt_FailedUsesProviderFailureReasonConstant(t 
 	)
 
 	result, err := svc.CreatePaymentAttempt(context.Background(), CreatePaymentAttemptInput{
-		OrderID:   "order_failed_123",
-		Amount:    2500,
-		Currency:  "GBP",
-		ReturnURL: "https://example.com/return",
+		OrderID:        "order_failed_123",
+		IdempotencyKey: "idempotency-key-123",
+		Amount:         2500,
+		Currency:       "GBP",
+		ReturnURL:      "https://example.com/return",
 	})
 	require.NoError(t, err)
 
