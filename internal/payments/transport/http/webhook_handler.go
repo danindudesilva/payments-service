@@ -14,16 +14,23 @@ import (
 )
 
 type WebhookHandler struct {
-	logger        *slog.Logger
-	webhookSecret string
-	service       *service.Service
+	logger             *slog.Logger
+	webhookSecret      string
+	service            *service.Service
+	processedEventRepo domain.ProcessedWebhookEventRepository
 }
 
-func NewWebhookHandler(logger *slog.Logger, webhookSecret string, service *service.Service) *WebhookHandler {
+func NewWebhookHandler(
+	logger *slog.Logger,
+	webhookSecret string,
+	service *service.Service,
+	processedEventRepo domain.ProcessedWebhookEventRepository,
+) *WebhookHandler {
 	return &WebhookHandler{
-		logger:        logger,
-		webhookSecret: webhookSecret,
-		service:       service,
+		logger:             logger,
+		webhookSecret:      webhookSecret,
+		service:            service,
+		processedEventRepo: processedEventRepo,
 	}
 }
 
@@ -53,7 +60,7 @@ func (h *WebhookHandler) handleStripeWebhook(w http.ResponseWriter, r *http.Requ
 	signature := r.Header.Get("Stripe-Signature")
 	event, err := webhook.ConstructEvent(payload, signature, h.webhookSecret)
 	if err != nil {
-		h.logger.Error("stripe webhook signature verification failed",
+		h.logger.Error("stripe webhook verification failed",
 			slog.String("request_id", basehttp.RequestIDFromContext(r.Context())),
 			slog.String("error", err.Error()),
 		)
@@ -61,6 +68,38 @@ func (h *WebhookHandler) handleStripeWebhook(w http.ResponseWriter, r *http.Requ
 		basehttp.WriteJSON(w, http.StatusBadRequest, basehttp.ErrorResponse{
 			Error: "invalid webhook payload or signature",
 		})
+		return
+	}
+
+	alreadyProcessed, err := h.processedEventRepo.HasProcessedEvent(r.Context(), "stripe", event.ID)
+	if err != nil {
+		h.logger.Error("check processed stripe webhook event failed",
+			slog.String("request_id", basehttp.RequestIDFromContext(r.Context())),
+			slog.String("event_id", event.ID),
+			slog.String("error", err.Error()),
+		)
+
+		basehttp.WriteJSON(w, http.StatusInternalServerError, basehttp.ErrorResponse{
+			Error: "failed to process webhook event",
+		})
+
+		return
+	}
+
+	if alreadyProcessed {
+		h.logger.Info("stripe webhook already processed",
+			slog.String("request_id", basehttp.RequestIDFromContext(r.Context())),
+			slog.String("event_id", event.ID),
+			slog.String("event_type", string(event.Type)),
+		)
+
+		basehttp.WriteJSON(w, http.StatusOK, map[string]any{
+			"received":          true,
+			"id":                event.ID,
+			"type":              string(event.Type),
+			"already_processed": true,
+		})
+
 		return
 	}
 
@@ -75,6 +114,22 @@ func (h *WebhookHandler) handleStripeWebhook(w http.ResponseWriter, r *http.Requ
 		basehttp.WriteJSON(w, http.StatusInternalServerError, basehttp.ErrorResponse{
 			Error: "failed to process webhook event",
 		})
+
+		return
+	}
+
+	if err := h.processedEventRepo.SaveProcessedEvent(r.Context(), "stripe", event.ID, string(event.Type)); err != nil {
+		h.logger.Error("save processed stripe webhook event failed",
+			slog.String("request_id", basehttp.RequestIDFromContext(r.Context())),
+			slog.String("event_id", event.ID),
+			slog.String("event_type", string(event.Type)),
+			slog.String("error", err.Error()),
+		)
+
+		basehttp.WriteJSON(w, http.StatusInternalServerError, basehttp.ErrorResponse{
+			Error: "failed to process webhook event",
+		})
+
 		return
 	}
 
@@ -106,7 +161,6 @@ func (h *WebhookHandler) processStripeEvent(r *http.Request, event stripe.Event)
 		return h.applyPaymentIntentEvent(r, event, domain.PaymentStatusCancelled, "")
 
 	default:
-		// Intentionally ignore unhandled event types for now.
 		return nil
 	}
 }
@@ -122,6 +176,12 @@ func (h *WebhookHandler) applyPaymentIntentEvent(
 		return err
 	}
 
+	h.logger.Info("applying stripe payment intent webhook update",
+		slog.String("request_id", basehttp.RequestIDFromContext(r.Context())),
+		slog.String("event_id", event.ID),
+		slog.String("provider_payment_id", intent.ID),
+		slog.String("status", string(status)),
+	)
 	_, err := h.service.ApplyProviderPaymentUpdate(r.Context(), service.ProviderPaymentUpdate{
 		ProviderPaymentID: intent.ID,
 		Status:            status,

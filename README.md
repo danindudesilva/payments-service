@@ -156,7 +156,15 @@ For each supported event, the backend:
 
 Unhandled Stripe event types are currently ignored and acknowledged with `200 OK`.
 
-Duplicate webhook delivery handling is added in the future.
+### Duplicate delivery handling
+
+Stripe may retry webhook deliveries. The service now persists processed Stripe event IDs and ignores duplicate deliveries safely.
+
+On duplicate delivery of the same Stripe event ID:
+
+- the endpoint returns `200 OK`
+- the event is not reprocessed
+- local payment state is not updated a second time
 
 ## Dependencies
 This project currently uses Stripe Go SDK `github.com/stripe/stripe-go/v84`.
