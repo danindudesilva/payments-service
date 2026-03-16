@@ -1,6 +1,15 @@
 APP_NAME=payments-service
 
-.PHONY: run test fmt build db-up db-down db-logs db-psql db-schema
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=payments_service
+DB_USER=payments_service
+DB_PASSWORD=payments_service
+DB_SSLMODE=disable
+DATABASE_URL=postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSLMODE)
+
+.PHONY: run test fmt build
+.PHONY: db-up db-down db-logs db-psql db-schema
 
 run:
 	go run ./cmd/api
@@ -24,7 +33,7 @@ db-logs:
 	docker compose -f deployments/docker-compose.yml logs -f postgres
 
 db-psql:
-	psql "postgres://payments_service:payments_service@localhost:5432/payments_service?sslmode=disable"
+	psql "$(DATABASE_URL)"
 
 db-schema:
-	psql "postgres://payments_service:payments_service@localhost:5432/payments_service?sslmode=disable" -f db/schema.sql
+	psql "$(DATABASE_URL)" -f db/schema.sql
