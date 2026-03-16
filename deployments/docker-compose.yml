@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: payments-service-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: payments_service
+      POSTGRES_USER: payments_service
+      POSTGRES_PASSWORD: payments_service
+    ports:
+      - "5432:5432"
+    volumes:
+      - payments-service-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payments_service -d payments_service"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  payments-service-postgres-data:
