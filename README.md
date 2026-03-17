@@ -38,6 +38,7 @@ git config core.hooksPath .githooks
 Environment variables:
 
 - `APP_ENV` - application environment, defaults to `development`
+- `APP_VERSION` - runtime application version string, defaults to `dev`
 - `PORT` - HTTP port, defaults to `3000`
 - `PAYMENTS_PROVIDER` - payment gateway provider, defaults to `fake`
 - `STRIPE_SECRET_KEY` - Stripe secret key, used when `PAYMENTS_PROVIDER=stripe`
