@@ -100,3 +100,20 @@ This makes the version visible in:
 - Cloud Run deployment config
 - /healthz
 - structured logs
+
+## How to use
+
+Once setup is complete:
+
+1. make sure `main` is up-to-date with the code you want to release
+2. create a Git tag such as `v1.0.0`
+3. publish a GitHub Release for that tag
+
+The workflow will deploy the release automatically.
+
+## Rollback approach
+
+To roll back:
+
+- redeploy a previous release tag manually, or
+- create/re-run a deployment using an earlier known-good image tag from Artifact Registry.

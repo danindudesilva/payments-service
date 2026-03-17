@@ -203,3 +203,19 @@ deploy/README.md
 ```
 
 This includes the required secrets, service account roles, and deployment flow.
+
+## Release deployments
+
+This repository supports release-driven Cloud Run deployments through GitHub Actions.
+
+Publishing a GitHub Release such as: `v1.0.0`
+
+will:
+- build and push a container image tagged v1.0.0
+- deploy that image to Cloud Run
+- set APP_VERSION=v1.0.0
+
+See:
+```
+deploy/github-actions/README.md
+```
