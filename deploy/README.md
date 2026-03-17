@@ -40,6 +40,7 @@ Create these Secret Manager secrets:
 The service needs these runtime values:
 
 - `APP_ENV=staging`
+- `APP_VERSION` - runtime application version string, defaults to `dev`
 - `PORT` provided by Cloud Run automatically
 - `DATABASE_URL`
 - `PAYMENTS_PROVIDER`
@@ -49,6 +50,7 @@ The service needs these runtime values:
 
 For Cloud Run, the service must listen on the injected `PORT` environment variable.
 For Cloud SQL PostgreSQL, Cloud Run supports connecting to a Cloud SQL instance as a managed service dependency.
+During release deployments, `APP_VERSION` should be set to the Git tag or GitHub Release version, for example `v1.0.0`.
 
 ## Database URL note
 

@@ -17,8 +17,9 @@ func NewRouter(cfg config.Config, logger *slog.Logger) http.Handler {
 		}
 
 		WriteJSON(w, http.StatusOK, map[string]any{
-			"status": "ok",
-			"env":    cfg.AppEnv,
+			"status":  "ok",
+			"env":     cfg.AppEnv,
+			"version": cfg.AppVersion,
 		})
 	})
 
