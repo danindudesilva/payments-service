@@ -8,6 +8,7 @@ import (
 
 type Config struct {
 	AppEnv               string
+	AppVersion           string
 	Port                 string
 	PaymentsProvider     string
 	StripeSecretKey      string
@@ -19,6 +20,7 @@ type Config struct {
 func Load() (Config, error) {
 	cfg := Config{
 		AppEnv:               getEnv("APP_ENV", "development"),
+		AppVersion:           getEnv("APP_VERSION", "dev"),
 		Port:                 getEnv("PORT", "3000"),
 		PaymentsProvider:     getEnv("PAYMENTS_PROVIDER", "fake"),
 		StripeSecretKey:      getEnv("STRIPE_SECRET_KEY", ""),
