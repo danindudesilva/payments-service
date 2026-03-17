@@ -193,3 +193,12 @@ docker run --rm \
 
   http://localhost:3000/demo
 
+## Cloud deployment
+
+Cloud Run and Cloud SQL deployment notes are in:
+
+```text
+deploy/README.md
+```
+
+This includes the required secrets, service account roles, and deployment flow.
