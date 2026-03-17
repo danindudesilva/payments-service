@@ -17,6 +17,6 @@ WORKDIR /app
 
 COPY --from=builder /out/payments-service /app/payments-service
 
-EXPOSE 8080
+EXPOSE 3000
 
 ENTRYPOINT ["/app/payments-service"]
