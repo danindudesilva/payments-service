@@ -97,6 +97,7 @@ func (a *App) Run(ctx context.Context) error {
 		a.logger.Info("http server starting",
 			slog.String("addr", a.server.Addr),
 			slog.String("env", a.cfg.AppEnv),
+			slog.String("version", a.cfg.AppVersion),
 			slog.String("payments_provider", a.cfg.PaymentsProvider),
 		)
 
