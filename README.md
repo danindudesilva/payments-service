@@ -168,3 +168,28 @@ On duplicate delivery of the same Stripe event ID:
 
 ## Dependencies
 This project currently uses Stripe Go SDK `github.com/stripe/stripe-go/v84`.
+
+## Container build and local run
+
+Build the container image:
+
+```bash
+docker build -t payments-service:local .
+```
+
+### Run it locally:
+
+```bash
+docker run --rm \
+  -p 8080:8080 \
+  -e PORT=8080 \
+  -e DATABASE_URL="postgres://payments_service:payments_service@host.docker.internal:5432/payments_service?sslmode=disable" \
+  payments-service:local
+```
+
+### Open:
+
+  http://localhost:8080/healthz
+
+  http://localhost:8080/demo
+
