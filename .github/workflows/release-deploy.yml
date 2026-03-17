@@ -1,0 +1,76 @@
+name: release-deploy
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PROJECT_ID: payments-service-staging
+  REGION: us-west1
+  SERVICE_NAME: payments-service-v1
+  ARTIFACT_REPO: payments-service-v1
+  IMAGE_NAME: payments-service
+  CLOUD_SQL_INSTANCE: payments-service-staging:us-west1:payments-service-db
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve release version
+        id: version
+        run: echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker auth for Artifact Registry
+        run: gcloud auth configure-docker "${{ env.REGION }}-docker.pkg.dev"
+
+      - name: Set image URI
+        run: |
+          echo "IMAGE_URI=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.tag }}" >> "$GITHUB_ENV"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push release image
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            -t "${IMAGE_URI}" \
+            --push \
+            .
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
+          image: ${{ env.IMAGE_URI }}
+          flags: >-
+            --allow-unauthenticated
+            --service-account=${{ secrets.GCP_RUNTIME_SERVICE_ACCOUNT }}
+            --add-cloudsql-instances=${{ env.CLOUD_SQL_INSTANCE }}
+            --set-env-vars=APP_ENV=staging,PAYMENTS_PROVIDER=stripe,APP_VERSION=${{ steps.version.outputs.tag }}
+            --set-secrets=DATABASE_URL=payments-service-database-url:latest,STRIPE_SECRET_KEY=payments-service-stripe-secret-key:latest,STRIPE_PUBLISHABLE_KEY=payments-service-stripe-publishable-key:latest,STRIPE_WEBHOOK_SECRET=payments-service-stripe-webhook-secret:latest
+
+      - name: Show deployed URL
+        run: |
+          gcloud run services describe "${{ env.SERVICE_NAME }}" \
+            --project="${{ env.PROJECT_ID }}" \
+            --region="${{ env.REGION }}" \
+            --format='value(status.url)'
