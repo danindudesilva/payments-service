@@ -1,7 +1,13 @@
-import http from "k6/http";
-import { check, sleep } from "k6";
+import { sleep } from "k6";
+import { SLEEP_SECONDS } from "./consts.js";
 
-const BASE_URL = __ENV.APP_URL || "http://localhost:3000";
+import {
+  randomSuffix,
+  createAttempt,
+  getAttempt,
+  reconcileAttempt,
+  parseJSON,
+} from "./helpers.js";
 
 export const options = {
   scenarios: {
@@ -21,70 +27,11 @@ export const options = {
   },
 };
 
-function randomSuffix() {
-  return Math.random().toString(36).slice(2, 10);
-}
-
-function createAttempt() {
+export default function () {
   const orderId = `order_perf_${randomSuffix()}`;
   const idempotencyKey = `idem_perf_${randomSuffix()}`;
 
-  const payload = JSON.stringify({
-    order_id: orderId,
-    amount: 3456,
-    currency: "gbp",
-    return_url: "https://example.com/return",
-    description: "k6 baseline test payment",
-  });
-
-  const res = http.post(`${BASE_URL}/payment-attempts`, payload, {
-    headers: {
-      "Content-Type": "application/json",
-      "Idempotency-Key": idempotencyKey,
-    },
-  });
-
-  check(res, {
-    "create attempt status is 200 or 201": (r) =>
-      r.status === 200 || r.status === 201,
-  });
-
-  return res;
-}
-
-function parseJSON(res) {
-  try {
-    return res.json();
-  } catch (_) {
-    return null;
-  }
-}
-
-function getAttempt(attemptId) {
-  const res = http.get(`${BASE_URL}/payment-attempts/${attemptId}`);
-
-  check(res, {
-    "get attempt status is 200": (r) => r.status === 200,
-  });
-
-  return res;
-}
-
-function reconcileAttempt(attemptId) {
-  const res = http.post(
-    `${BASE_URL}/payment-attempts/${attemptId}/reconcile`,
-    null
-  );
-
-  check(res, {
-    "reconcile attempt status is 200": (r) => r.status === 200,
-  });
-
-  return res;
-}
-
-export default function () {
-  const createRes = createAttempt();
+  const createRes = createAttempt(orderId, idempotencyKey);
   const body = parseJSON(createRes);
 
   if (!body || !body.id) {
@@ -94,5 +41,5 @@ export default function () {
   getAttempt(body.id);
   reconcileAttempt(body.id);
 
-  sleep(0.1);
+  sleep(SLEEP_SECONDS);
 }
