@@ -12,6 +12,135 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestCreatePaymentAttemptInput_Validate(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		input   CreatePaymentAttemptInput
+		wantErr string
+	}{
+		{
+			name: "missing order id",
+			input: CreatePaymentAttemptInput{
+				OrderID:        "",
+				IdempotencyKey: "idem_123",
+				Amount:         3456,
+				Currency:       "GBP",
+				ReturnURL:      "https://example.com/return",
+			},
+			wantErr: "order_id: must not be empty",
+		},
+		{
+			name: "missing idempotency key",
+			input: CreatePaymentAttemptInput{
+				OrderID:        "order_123",
+				IdempotencyKey: "",
+				Amount:         3456,
+				Currency:       "GBP",
+				ReturnURL:      "https://example.com/return",
+			},
+			wantErr: "idempotency_key: must not be empty",
+		},
+		{
+			name: "non-positive amount",
+			input: CreatePaymentAttemptInput{
+				OrderID:        "order_123",
+				IdempotencyKey: "idem_123",
+				Amount:         0,
+				Currency:       "GBP",
+				ReturnURL:      "https://example.com/return",
+			},
+			wantErr: "amount: must be greater than zero",
+		},
+		{
+			name: "missing currency",
+			input: CreatePaymentAttemptInput{
+				OrderID:        "order_123",
+				IdempotencyKey: "idem_123",
+				Amount:         3456,
+				Currency:       "",
+				ReturnURL:      "https://example.com/return",
+			},
+			wantErr: "currency: must not be empty",
+		},
+		{
+			name: "missing return url",
+			input: CreatePaymentAttemptInput{
+				OrderID:        "order_123",
+				IdempotencyKey: "idem_123",
+				Amount:         3456,
+				Currency:       "GBP",
+				ReturnURL:      "",
+			},
+			wantErr: "return_url: must not be empty",
+		},
+		{
+			name: "valid input",
+			input: CreatePaymentAttemptInput{
+				OrderID:        "order_123",
+				IdempotencyKey: "idem_123",
+				Amount:         3456,
+				Currency:       "GBP",
+				ReturnURL:      "https://example.com/return",
+			},
+			wantErr: "",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := tt.input.Validate()
+			if tt.wantErr == "" {
+				require.NoError(t, err)
+				return
+			}
+
+			require.Error(t, err)
+			assert.Equal(t, tt.wantErr, err.Error())
+		})
+	}
+}
+
+func TestService_CreatePaymentAttempt_InvalidInputReturnsValidationError(t *testing.T) {
+	t.Parallel()
+
+	repo := memoryrepo.NewRepository()
+	gatewayCalls := 0
+
+	svc := New(
+		repo,
+		&fakeGateway{
+			createPaymentFunc: func(ctx context.Context, request domain.CreateProviderPaymentRequest) (domain.CreateProviderPaymentResult, error) {
+				gatewayCalls++
+				return domain.CreateProviderPaymentResult{}, nil
+			},
+			getPaymentFunc: func(ctx context.Context, providerPaymentID string) (domain.CreateProviderPaymentResult, error) {
+				return domain.CreateProviderPaymentResult{}, nil
+			},
+		},
+		time.Now,
+		func() string { return "attempt_123" },
+	)
+
+	_, err := svc.CreatePaymentAttempt(context.Background(), CreatePaymentAttemptInput{
+		OrderID:        "",
+		IdempotencyKey: "idem_123",
+		Amount:         3456,
+		Currency:       "GBP",
+		ReturnURL:      "https://example.com/return",
+	})
+	require.Error(t, err)
+
+	var validationErr ValidationError
+	require.ErrorAs(t, err, &validationErr)
+	assert.Equal(t, "order_id", validationErr.Field)
+	assert.Equal(t, 0, gatewayCalls)
+}
+
 func TestService_CreatePaymentAttempt_RequiresAction(t *testing.T) {
 	t.Parallel()
 

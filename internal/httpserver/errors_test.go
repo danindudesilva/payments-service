@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/danindudesilva/payments-service/internal/payments/domain"
+	"github.com/danindudesilva/payments-service/internal/payments/service"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,6 +18,12 @@ func TestMapError(t *testing.T) {
 		wantStatus int
 		wantMsg    string
 	}{
+		{
+			name:       "service validation error",
+			err:        service.ValidationError{Field: "order_id", Message: "must not be empty"},
+			wantStatus: http.StatusBadRequest,
+			wantMsg:    "order_id: must not be empty",
+		},
 		{
 			name:       "payment not found",
 			err:        domain.ErrPaymentNotFound,
