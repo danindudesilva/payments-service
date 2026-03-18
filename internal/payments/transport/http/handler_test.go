@@ -56,6 +56,52 @@ func TestCreatePaymentAttemptRoutes(t *testing.T) {
 	assert.Contains(t, res.Body.String(), `"payment_id":"pi_123"`)
 }
 
+func TestCreatePaymentAttempt_EmptyOrderIDReturnsBadRequest(t *testing.T) {
+	t.Parallel()
+
+	handler := newTestHandler(t)
+
+	req := httptest.NewRequest(http.MethodPost, "/payment-attempts", bytes.NewBufferString(`{
+		"order_id":"",
+		"amount":3456,
+		"currency":"gbp",
+		"return_url":"https://example.com/return",
+		"description":"test payment"
+	}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Idempotency-Key", "idem_123")
+
+	res := httptest.NewRecorder()
+
+	handler.handlePaymentAttempts(res, req)
+
+	require.Equal(t, http.StatusBadRequest, res.Code)
+	assert.Contains(t, res.Body.String(), "order_id: must not be empty")
+}
+
+func TestCreatePaymentAttempt_InvalidAmountReturnsBadRequest(t *testing.T) {
+	t.Parallel()
+
+	handler := newTestHandler(t)
+
+	req := httptest.NewRequest(http.MethodPost, "/payment-attempts", bytes.NewBufferString(`{
+		"order_id":"order_123",
+		"amount":0,
+		"currency":"gbp",
+		"return_url":"https://example.com/return",
+		"description":"test payment"
+	}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Idempotency-Key", "idem_123")
+
+	res := httptest.NewRecorder()
+
+	handler.handlePaymentAttempts(res, req)
+
+	require.Equal(t, http.StatusBadRequest, res.Code)
+	assert.Contains(t, res.Body.String(), "amount: must be greater than zero")
+}
+
 func TestCreatePaymentAttemptRoutes_InvalidJSON(t *testing.T) {
 	t.Parallel()
 

@@ -62,6 +62,10 @@ func (s *Service) CreatePaymentAttempt(
 	ctx context.Context,
 	input CreatePaymentAttemptInput,
 ) (*CreatePaymentAttemptOutput, error) {
+	if err := input.Validate(); err != nil {
+		return nil, err
+	}
+
 	if existing, err := s.repo.GetByIdempotencyKey(ctx, input.IdempotencyKey); err == nil {
 		return &CreatePaymentAttemptOutput{
 			Attempt: existing,
