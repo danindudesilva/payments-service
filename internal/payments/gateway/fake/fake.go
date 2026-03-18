@@ -3,9 +3,9 @@ package fake
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/danindudesilva/payments-service/internal/payments/domain"
+	"github.com/google/uuid"
 )
 
 type Gateway struct{}
@@ -15,7 +15,7 @@ func New() *Gateway {
 }
 
 func (g *Gateway) CreatePayment(ctx context.Context, request domain.CreateProviderPaymentRequest) (domain.CreateProviderPaymentResult, error) {
-	providerPaymentID := fmt.Sprintf("fake_pi_%d", time.Now().UnixNano())
+	providerPaymentID := uuid.New().String()
 
 	return domain.CreateProviderPaymentResult{
 		ProviderName:      "fake",
