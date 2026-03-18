@@ -34,10 +34,17 @@ Run the idempotency concurrency test:
 make perf-idempotency
 ```
 
+Run the soak tests:
+
+```bash
+make perf-soak
+```
+
 You can also point the same tests at another environment, such as Cloud Run:
 ```
 APP_URL="https://your-service-url.run.app" make perf-baseline
 APP_URL="https://your-service-url.run.app" make perf-idempotency
+APP_URL="https://your-service-url.run.app" make perf-soak
 ```
 
 ### What these tests cover
