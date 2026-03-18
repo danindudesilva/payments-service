@@ -20,7 +20,12 @@ Set these as GitHub Variables:
 - `TEST_DB_PASSWORD`
 - `TEST_DB_PORT`
 - `MIN_COVERAGE`
+- `DATABASE_URL_SECRET_NAME`
+- `STRIPE_SECRET_KEY_SECRET_NAME`
+- `STRIPE_PUBLISHABLE_KEY_SECRET_NAME`
+- `STRIPE_WEBHOOK_SECRET_SECRET_NAME`
 
+--set-secrets=DATABASE_URL=${{ vars.DATABASE_URL_SECRET_NAME }}:latest,STRIPE_SECRET_KEY=${{ vars.STRIPE_SECRET_KEY_SECRET_NAME }}:latest,STRIPE_PUBLISHABLE_KEY=${{ vars.STRIPE_PUBLISHABLE_KEY_SECRET_NAME }}:latest,STRIPE_WEBHOOK_SECRET=${{ vars.STRIPE_WEBHOOK_SECRET_SECRET_NAME }}:latest
 ## Required GitHub secrets
 
 Set these as GitHub Secrets:
@@ -45,6 +50,10 @@ Set these as GitHub Secrets:
 - `TEST_DB_PASSWORD=payments_service`
 - `TEST_DB_PORT=5432`
 - `MIN_COVERAGE=70`
+- `DATABASE_URL_SECRET_NAME=payments-service-database-url`
+- `STRIPE_SECRET_KEY_SECRET_NAME=payments-service-stripe-secret-key`
+- `STRIPE_PUBLISHABLE_KEY_SECRET_NAME=payments-service-stripe-publishable-key`
+- `STRIPE_WEBHOOK_SECRET_SECRET_NAME=payments-service-stripe-webhook-secret`
 
 ## Portability strategy
 
