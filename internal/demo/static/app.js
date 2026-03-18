@@ -39,6 +39,14 @@
       typeof value === "string" ? value : JSON.stringify(value, null, 2);
   }
 
+  function generateDemoSuffix() {
+    return Math.random().toString(36).slice(2, 10);
+  }
+
+  function generateDefaultOrderId() {
+    return `order_demo_${generateDemoSuffix()}`;
+  }
+
   function getAttemptIdFromURL() {
     const params = new URLSearchParams(window.location.search);
     return params.get("attempt_id");
@@ -96,7 +104,7 @@
     attemptId = null;
     clientSecret = null;
     lastPayload = null;
-
+    orderIdInput.value = generateDefaultOrderId();
     if (paymentElement) {
       paymentElement.destroy();
       paymentElement = null;
@@ -119,6 +127,7 @@
     stateClientSecret.textContent = clientSecret ? "present" : "not loaded";
     stateReturnURL.textContent = attemptId ? getReturnURL(attemptId) : "-";
     stateReturned.textContent = returnedFromStripe() ? "yes" : "no";
+    orderIdInput.value = generateDefaultOrderId();
   }
 
   async function createAttempt({ orderId, amount, currency }) {
