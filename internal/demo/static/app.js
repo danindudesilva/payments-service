@@ -210,7 +210,7 @@
 
     try {
       const orderId = orderIdInput.value.trim();
-      const amount = Number(amountInput.value);
+      const amount = parseMajorAmountToMinorUnits(amountInput.value);
       const currency = currencyInput.value.trim();
 
       const attempt = await createAttempt({ orderId, amount, currency });
@@ -313,6 +313,35 @@
     } catch (error) {
       log(error.message || String(error));
     }
+  }
+
+  function parseMajorAmountToMinorUnits(value) {
+    const normalized = String(value).trim();
+
+    if (!normalized) {
+      throw new Error("Amount is required.");
+    }
+
+    const parsed = Number(normalized);
+    if (!Number.isFinite(parsed)) {
+      throw new Error("Amount must be a valid number.");
+    }
+
+    if (parsed <= 0) {
+      throw new Error("Amount must be greater than zero.");
+    }
+
+    const minorUnits = Math.round(parsed * 100);
+
+    if (minorUnits <= 0) {
+      throw new Error("Amount must be greater than zero.");
+    }
+
+    return minorUnits;
+  }
+
+  function formatMinorUnitsToMajor(minorUnits) {
+    return (minorUnits / 100).toFixed(2);
   }
 
   createForm.addEventListener("submit", handleCreateSubmit);
