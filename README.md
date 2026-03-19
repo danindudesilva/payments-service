@@ -1,12 +1,12 @@
-# payments-service-demo
+# Payments backend service
 
-A project that implements a card payment flow with 3D Secure (3DS) using Go.
+A project that implements a card payment flow with 3D Secure (3DS) using [Stripe](https://docs.stripe.com/).
 
-## Why this exists
+## Why
 
-This repo is for implementing payment architecture correctly:
+This repo is to implement secure payments architecture correctly:
 
-- asynchronous payment lifecycles
+- async payment lifecycles
 - 3DS challenge / redirect handling
 - webhook-driven reconciliation
 - client disconnect recovery
@@ -51,7 +51,7 @@ Environment variables:
 - `GET /healthz`
 - `POST /payment-attempts`
 - `GET /payment-attempts/{id}`
--  `POST /webhooks/stripe`
+- `POST /webhooks/stripe`
 
 ## Example: create a payment attempt
 
@@ -116,22 +116,27 @@ Install the Stripe CLI and authenticate:
 ```bash
 brew install stripe/stripe-cli/stripe
 ```
+
 and
 ```bash
 stripe login
 ```
+
 Start forwarding Stripe webhook events to your local service:
 ```bash
 stripe listen --forward-to localhost:3000/webhooks/stripe
 ```
+
 The CLI will print a webhook signing secret. Export it before starting the app:
 ```bash
 export STRIPE_WEBHOOK_SECRET="whsec_..."
 ```
+
 Trigger a test webhook event:
 ```bash
 stripe trigger payment_intent.succeeded
 ```
+
 You can also trigger other useful events such as:
 ```bash
 stripe trigger payment_intent.payment_failed
@@ -168,6 +173,7 @@ On duplicate delivery of the same Stripe event ID:
 - local payment state is not updated a second time
 
 ## Dependencies
+
 This project currently uses Stripe Go SDK `github.com/stripe/stripe-go/v84`.
 
 ## Container build and local run
@@ -196,11 +202,7 @@ docker run --rm \
 
 ## Cloud deployment
 
-Cloud Run and Cloud SQL deployment notes are in:
-
-```text
-deploy/README.md
-```
+Cloud Run and Cloud SQL deployment notes are in: [deploy/README.md](deploy/README.md)
 
 This includes the required secrets, service account roles, and deployment flow.
 
@@ -215,10 +217,7 @@ will:
 - deploy that image to Cloud Run
 - set APP_VERSION=v1.0.0
 
-See:
-```
-deploy/github-actions/README.md
-```
+See: [deploy/github-actions/README.md](deploy/github-actions/README.md)
 
 ## Performance testing mode
 
